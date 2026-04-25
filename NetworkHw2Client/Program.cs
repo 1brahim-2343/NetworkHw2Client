@@ -7,6 +7,7 @@ namespace NetworkHw2Client
 {
     internal class Program
     {
+        static List<AppClient>? onlineAppClients = [];
         static void Main(string[] args)
         {
             var client = new TcpClient();
@@ -20,7 +21,7 @@ namespace NetworkHw2Client
             while (true)
             {
                 string msg = Console.ReadLine()!;
-                SendMessage(client, msg);
+                _ = SendMessage(client, msg);
             }
         }
 
@@ -33,7 +34,8 @@ namespace NetworkHw2Client
                 {
                     Console.WriteLine("Connected successfully", Console.ForegroundColor = ConsoleColor.Green);
                     Console.ResetColor();
-                    
+
+
                     var stream = client.GetStream();
                     var bw = new BinaryWriter(stream);
                     bw.Write(name ?? "Unknown");
@@ -42,7 +44,7 @@ namespace NetworkHw2Client
             }
             catch (Exception ex)
             {
-                Console.Write("Server disconnected: ",Console.ForegroundColor = ConsoleColor.DarkYellow);
+                Console.Write("ERROR: ", Console.ForegroundColor = ConsoleColor.DarkYellow);
                 Console.WriteLine(ex.Message, Console.ForegroundColor = ConsoleColor.Red);
                 Console.ResetColor();
                 Environment.Exit(0);
@@ -55,25 +57,25 @@ namespace NetworkHw2Client
             while (true)
             {
                 var result = br.ReadString();
-                if (IsJson(result))
+                if (Helper.IsJson(result))
                 {
-                    var onlineAppClients = JsonSerializer.Deserialize<List<AppClient>>(result);
-                    foreach (var appClient in onlineAppClients!)
+                    onlineAppClients = JsonSerializer.Deserialize<List<AppClient>>(result);
+                    string title = " ONLINE USERS ";
+                    title.PrintHeader();
+                    for (int i = 0; i < onlineAppClients!.Count; i++)
                     {
                         int portClient = ((IPEndPoint)client.Client.LocalEndPoint!).Port;
-                        int portAppClient = int.Parse((appClient.RemoteEndPoint.Split(":"))[1]);
-                        if(portClient == portAppClient)
+                        int portAppClient = int.Parse((onlineAppClients[i].ServerSideRemoteEndPoint!.Split(":"))[1]);
+                        if (portClient == portAppClient)
                         {
-                            Console.WriteLine("You are online");
+                            string onlineText = $"{i + 1}. You are online".PadLeft(30 - title.Length / 2);
+                            Console.WriteLine(onlineText, Console.ForegroundColor = ConsoleColor.Green);
                         }
                         else
                         {
-                            Console.WriteLine($"{appClient.Name} is online");
+                            string onlineText = $"{i + 1}. {onlineAppClients[i].Name} is online".PadLeft(30 - title.Length / 2);
+                            Console.WriteLine(onlineText, Console.ForegroundColor = ConsoleColor.Green);
                         }
-                        //Console.WriteLine($"{
-                        //    ((user.RemoteEndPoint == client.Client.RemoteEndPoint!.ToString()) ?
-                        //    user.Name + " is" : "You are")
-                        //    } online",Console.ForegroundColor = ConsoleColor.Green);
                         Console.ResetColor();
                     }
                 }
@@ -87,24 +89,61 @@ namespace NetworkHw2Client
 
         }
 
-        private static bool IsJson(string result)
+
+
+        private static async Task SendMessage(TcpClient client, string msg)
         {
-            if (result.Trim().StartsWith('{') || result.Trim().StartsWith('[') &&
-                result.Trim().EndsWith('}') || result.Trim().EndsWith(']'))
-                return true;
-            return false;
+            var bw = new BinaryWriter(client.GetStream());
+            if (!msg.StartsWith("_"))
+            {
+                try
+                {
+                    bw.Write(msg);
+                }
+                catch (Exception)
+                {
+                }
+            }
+            switch (msg)
+            {
+                case "_chat":
+                    {
+                        while (true)
+                        {
+                            bw.Write("_who");
+                            await Task.Delay(10);
+                            if (onlineAppClients!.Count > 1)
+                            {
+                                int.TryParse(Console.ReadLine()!, out int clientChoice);
+                                string remoteEP = onlineAppClients[clientChoice - 1].ServerSideRemoteEndPoint!;
+                                var name = onlineAppClients[clientChoice - 1].Name;
+
+                                Console.Write($"Enter message to send to {name} OR type _exit: ");
+                                string message = Console.ReadLine()!;
+                                if (message == "_exit")
+                                    break;
+                                string stringToSend = new string(message + "\n" + remoteEP);
+                                var jsonMessage = JsonSerializer.Serialize(stringToSend);
+
+                                bw.Write(jsonMessage);
+                            }
+                            else
+                            {
+                                Console.WriteLine("No one to chat with", Console.ForegroundColor = ConsoleColor.DarkYellow);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
         }
 
-        private static void SendMessage(TcpClient client, string msg)
+        private static void SendMessageToUser(TcpClient client)
         {
-            try
-            {
-                var bw = new BinaryWriter(client.GetStream());
-                bw.Write(msg);
-            }
-            catch (Exception)
-            {
-            }
+            var stream = client.GetStream();
+            var br = new BinaryReader(stream);
         }
     }
 }

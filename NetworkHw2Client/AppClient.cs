@@ -9,6 +9,6 @@ namespace NetworkHw2Client
     public class AppClient
     {
         public string? Name { get; set; }
-        public string? RemoteEndPoint { get; set; }
+        public string? ServerSideRemoteEndPoint { get; set; }
     }
 }
