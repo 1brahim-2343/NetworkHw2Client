@@ -10,7 +10,7 @@ namespace NetworkHw2Client
         static void Main(string[] args)
         {
             var client = new TcpClient();
-            var ipAddress = IPAddress.Parse("192.168.0.239");
+            var ipAddress = IPAddress.Parse("192.168.1.71");
             var port = 44000;
             var ep = new IPEndPoint(ipAddress, port);
             Console.Write("Enter name: ");
@@ -57,13 +57,23 @@ namespace NetworkHw2Client
                 var result = br.ReadString();
                 if (IsJson(result))
                 {
-                    var onlineUsers = JsonSerializer.Deserialize<List<AppClient>>(result);
-                    foreach (var user in onlineUsers!)
+                    var onlineAppClients = JsonSerializer.Deserialize<List<AppClient>>(result);
+                    foreach (var appClient in onlineAppClients!)
                     {
-                        Console.WriteLine($"{
-                            ((user.RemoteEndPoint == client.Client.RemoteEndPoint!.ToString()) ?
-                            user.Name + " is" : "You are")
-                            } online",Console.ForegroundColor = ConsoleColor.Green);
+                        int portClient = ((IPEndPoint)client.Client.LocalEndPoint!).Port;
+                        int portAppClient = int.Parse((appClient.RemoteEndPoint.Split(":"))[1]);
+                        if(portClient == portAppClient)
+                        {
+                            Console.WriteLine("You are online");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{appClient.Name} is online");
+                        }
+                        //Console.WriteLine($"{
+                        //    ((user.RemoteEndPoint == client.Client.RemoteEndPoint!.ToString()) ?
+                        //    user.Name + " is" : "You are")
+                        //    } online",Console.ForegroundColor = ConsoleColor.Green);
                         Console.ResetColor();
                     }
                 }
