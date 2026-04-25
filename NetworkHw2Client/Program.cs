@@ -81,7 +81,7 @@ namespace NetworkHw2Client
                 }
                 else if (!result.StartsWith('_'))
                 {
-                    Console.WriteLine($"Message from server: {result}");
+                    Console.WriteLine($"Message: {result}");
                 }
                 else
                     continue;
@@ -108,12 +108,11 @@ namespace NetworkHw2Client
             {
                 case "_chat":
                     {
-
-
                         bw.Write("_who");
-                        Thread.Sleep(15);
+                        Thread.Sleep(10);
                         if (onlineAppClients!.Count > 1)
                         {
+                            Console.Write("Choose user(Enter number): ");
                             int.TryParse(Console.ReadLine()!, out int clientChoice);
                             string remoteEP = onlineAppClients[clientChoice - 1].ServerSideRemoteEndPoint!;
                             var name = onlineAppClients[clientChoice - 1].Name;
@@ -129,7 +128,6 @@ namespace NetworkHw2Client
                                 bw.Write(jsonMessage);
 
                             }
-
                         }
                         else
                         {
@@ -142,12 +140,6 @@ namespace NetworkHw2Client
                 default:
                     break;
             }
-        }
-
-        private static void SendMessageToUser(TcpClient client)
-        {
-            var stream = client.GetStream();
-            var br = new BinaryReader(stream);
         }
     }
 }
