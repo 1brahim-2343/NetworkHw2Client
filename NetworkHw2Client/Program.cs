@@ -21,7 +21,7 @@ namespace NetworkHw2Client
             while (true)
             {
                 string msg = Console.ReadLine()!;
-                _ = SendMessage(client, msg);
+                SendMessage(client, msg);
             }
         }
 
@@ -91,7 +91,7 @@ namespace NetworkHw2Client
 
 
 
-        private static async Task SendMessage(TcpClient client, string msg)
+        private static void SendMessage(TcpClient client, string msg)
         {
             var bw = new BinaryWriter(client.GetStream());
             if (!msg.StartsWith("_"))
@@ -108,16 +108,17 @@ namespace NetworkHw2Client
             {
                 case "_chat":
                     {
-                        while (true)
-                        {
-                            bw.Write("_who");
-                            await Task.Delay(10);
-                            if (onlineAppClients!.Count > 1)
-                            {
-                                int.TryParse(Console.ReadLine()!, out int clientChoice);
-                                string remoteEP = onlineAppClients[clientChoice - 1].ServerSideRemoteEndPoint!;
-                                var name = onlineAppClients[clientChoice - 1].Name;
 
+
+                        bw.Write("_who");
+                        Thread.Sleep(15);
+                        if (onlineAppClients!.Count > 1)
+                        {
+                            int.TryParse(Console.ReadLine()!, out int clientChoice);
+                            string remoteEP = onlineAppClients[clientChoice - 1].ServerSideRemoteEndPoint!;
+                            var name = onlineAppClients[clientChoice - 1].Name;
+                            while (true)
+                            {
                                 Console.Write($"Enter message to send to {name} OR type _exit: ");
                                 string message = Console.ReadLine()!;
                                 if (message == "_exit")
@@ -126,13 +127,16 @@ namespace NetworkHw2Client
                                 var jsonMessage = JsonSerializer.Serialize(stringToSend);
 
                                 bw.Write(jsonMessage);
+
                             }
-                            else
-                            {
-                                Console.WriteLine("No one to chat with", Console.ForegroundColor = ConsoleColor.DarkYellow);
-                                break;
-                            }
+
                         }
+                        else
+                        {
+                            Console.WriteLine("No one to chat with", Console.ForegroundColor = ConsoleColor.DarkYellow);
+                            break;
+                        }
+
                         break;
                     }
                 default:
